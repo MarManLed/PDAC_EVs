@@ -1,6 +1,6 @@
 # PDAC secretome–NK interaction networks
 
-Reproducibility materials for *Integrative network analysis identifies context-dependent EV-associated signaling modules linking pancreatic cancer secretome with NK cells*.
+Reproducibility materials for *Integrative network analysis prioritizes candidate EV-associated proteins potentially involved in pancreatic cancer–NK cell communication*.
 
 The repository contains the R analysis scripts, original proteomics and annotation inputs, and reference centrality results used to study predicted interactions between EV-associated PDAC secretome candidates and NK-cell proteins. The analyses are computational and hypothesis-generating; STRING associations do not demonstrate direct EV transfer or physical binding to NK cells.
 
@@ -33,8 +33,6 @@ PDAC_secretome_NK_repository_v2/
             └── Network_VEStotal_NKPDAC.csv
 ```
 
-The `data/scRNAseq/` and `results/` directories are created or populated locally when the preparation and analysis scripts are run; they do not need to be committed to Git.
-
 ## Input data and provenance
 
 | Path | Role |
@@ -45,8 +43,6 @@ The `data/scRNAseq/` and `results/` directories are created or populated locally
 | `data/annotations/Exocarta pancreatic cancer cells.xlsx` | ExoCarta snapshot for pancreatic cancer cells, used to identify candidate EV-associated proteins. The source worksheet has introductory rows before the header. |
 | `data/references/centrality/Network_*.csv` | Six original network-centrality tables, retained to trace results from the Cytoscape/CytoHubba analysis. These tables are **not** original network edge lists or Cytoscape sessions. |
 | `data/references/Published_Null_Model_Table_S13.xlsx` | Reference output for comparison with the reported degree-preserving null-model statistics; not an input to network randomization. |
-
-**Data-sharing note:** Before publishing the proteomics workbook or annotation files in a public repository, confirm that redistribution is permitted and that they contain no patient-identifiable or otherwise restricted information. Also verify permission to redistribute third-party annotations.
 
 ## Public single-cell data
 
@@ -92,15 +88,3 @@ The actual execution environment is recorded in [`scripts/execution_environment.
 
 A `sessionInfo()` record documents the observed environment; it is not an installation lockfile. For environment restoration, a validated `renv.lock` may be added after confirming that the complete pipeline runs with the committed files.
 
-## Reproducibility and limitations
-
-- The six `Network_*.csv` files are retained centrality **results**, not original STRING network edges. Exact reconstruction of the originally published Cytoscape networks requires frozen edge lists and preferably Cytoscape `.cys` sessions. Live STRING API calls may yield differences if database content changes.
-- The original external GSEA gene-set collections beyond GO (e.g. KEGG, Reactome and other tested collections) are not listed in the current directory. To reproduce the full range of enrichment analyses, archive the exact collections and releases used, preferably under `data/references/gsea/`, and verify their use by the script.
-- The supplementary null-model workbook serves as a benchmark for checking the network code; it does not substitute for rerunning the null-model analysis.
-- **End-to-end execution and numerical agreement with the manuscript have not yet been independently verified for this repository layout.** Compare outputs against the final manuscript and supplementary tables before describing the release as fully reproducible.
-
-Recommended verification targets from the manuscript include 2,654 filtered protein accessions, 2,604 mapped proteins/genes, 2,088 NK-PDAC cells, 1,314 NK-ADJ cells, six STRING 0.9 networks, and the reported empirical null-model P values and BH-FDR values.
-
-## Citation
-
-Please cite the associated manuscript and the original GEO and database resources when reusing these materials. Add the final article DOI and the repository release identifier once available.
