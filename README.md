@@ -1,26 +1,106 @@
-# PDAC secretome–NK cell integrative analysis
+# PDAC secretome–NK interaction networks
 
-This repository documents the bioinformatic workflow used to integrate proteomic secretome data from patient-derived pancreatic ductal adenocarcinoma cultures with single-cell RNA-sequencing profiles of NK cells from tumor and adjacent tissues.
+Reproducibility materials for *Integrative network analysis identifies context-dependent EV-associated signaling modules linking pancreatic cancer secretome with NK cells*.
 
-## Script
+The repository contains the R analysis scripts, original proteomics and annotation inputs, and reference centrality results used to study predicted interactions between EV-associated PDAC secretome candidates and NK-cell proteins. The analyses are computational and hypothesis-generating; STRING associations do not demonstrate direct EV transfer or physical binding to NK cells.
 
-`PDAC_secretome_NK_illustrative_analysis.R` is an intentionally non-executable, condensed representation of the exploratory analyses originally implemented in the project R Markdown notebooks.
+## Repository structure
 
-The script illustrates:
+```text
+PDAC_secretome_NK_repository_v2/
+├── README.md
+├── scripts/
+│   ├── 01_proteomics.R
+│   ├── 02_single_cell.R
+│   ├── 03_networks.R
+│   ├── prepare_GSE212966.py
+│   └── execution_environment.txt
+└── data/
+    ├── proteomics/
+    │   └── ID of PDAC cells_JI.xlsx
+    ├── annotations/
+    │   ├── Annotation_RNAseq.rda
+    │   ├── Reference_Annotation.rda
+    │   └── Exocarta pancreatic cancer cells.xlsx
+    └── references/
+        ├── Published_Null_Model_Table_S13.xlsx
+        └── centrality/
+            ├── Network_VESloca_NKADJ.csv
+            ├── Network_VESloca_NKPDAC.csv
+            ├── Network_VESmeta_NKADJ.csv
+            ├── Network_VESmeta_NKPDAC.csv
+            ├── Network_VEStotal_NKADJ.csv
+            └── Network_VEStotal_NKPDAC.csv
+```
 
-1. secretome preprocessing and missing-value handling;
-2. protein-level univariate analysis, effect-size calculation, PCA and GSEA;
-3. exploratory BDA, random forest, SVM, XGBoost and SHAP analyses;
-4. Seurat processing of GSE212966 PDAC and adjacent-tissue samples;
-5. SingleR annotation and NK-cell selection;
-6. filtering of expressed NK-cell plasma-membrane genes;
-7. ExoCarta and GO-based selection of theoretical EV-associated secretome proteins;
-8. STRING interaction queries and intergroup edge filtering;
-9. Cytoscape visualization;
-10. CytoHubba-based local-hub, bridge and global-influencer prioritization.
+The `data/scRNAseq/` and `results/` directories are created or populated locally when the preparation and analysis scripts are run; they do not need to be committed to Git.
 
-## Important note
+## Input data and provenance
 
-The code is provided for methodological transparency and does not constitute a turnkey reproducible pipeline. Local paths, source data organization, intermediate `.rda` objects, Cytoscape exports and custom functions must be adapted before execution.
+| Path | Role |
+| --- | --- |
+| `data/proteomics/ID of PDAC cells_JI.xlsx` | Original PDAC secretome proteomics workbook. |
+| `data/annotations/Annotation_RNAseq.rda` | Original annotation object used to select genes annotated with the GO Cellular Component term *plasma membrane*. The scripts expect an object named `annot` containing `GOComponent`. |
+| `data/annotations/Reference_Annotation.rda` | Additional original annotation reference retained for traceability; not currently an explicit required input in the three analysis scripts. |
+| `data/annotations/Exocarta pancreatic cancer cells.xlsx` | ExoCarta snapshot for pancreatic cancer cells, used to identify candidate EV-associated proteins. The source worksheet has introductory rows before the header. |
+| `data/references/centrality/Network_*.csv` | Six original network-centrality tables, retained to trace results from the Cytoscape/CytoHubba analysis. These tables are **not** original network edge lists or Cytoscape sessions. |
+| `data/references/Published_Null_Model_Table_S13.xlsx` | Reference output for comparison with the reported degree-preserving null-model statistics; not an input to network randomization. |
 
-The original notebooks remain the authoritative exploratory code record.
+**Data-sharing note:** Before publishing the proteomics workbook or annotation files in a public repository, confirm that redistribution is permitted and that they contain no patient-identifiable or otherwise restricted information. Also verify permission to redistribute third-party annotations.
+
+## Public single-cell data
+
+The single-cell data are publicly available under **GEO accession [GSE212966](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE212966)**. The study uses six PDAC and six adjacent non-tumor tissue samples. To avoid duplicating the GEO archive in GitHub, retrieve it locally:
+
+```bash
+python3 scripts/prepare_GSE212966.py --download
+```
+
+The helper downloads `GSE212966_RAW.tar` and arranges the processed count matrices under:
+
+```text
+data/scRNAseq/GSE212966_RAW/
+├── PDAC/
+│   ├── PDAC1_filtered_feature_bc_matrix/
+│   └── ... PDAC6_filtered_feature_bc_matrix/
+└── ADJ/
+    ├── ADJ1_filtered_feature_bc_matrix/
+    └── ... ADJ6_filtered_feature_bc_matrix/
+```
+
+Each sample directory should contain `matrix.mtx.gz`, `barcodes.tsv.gz`, and either `genes.tsv.gz` or `features.tsv.gz`. Alternatively, download the archive manually from GEO and run `python3 scripts/prepare_GSE212966.py`.
+
+## Analysis workflow
+
+Run the commands **from the repository root** (the folder containing `README.md`, `data/`, and `scripts/`):
+
+```bash
+Rscript scripts/01_proteomics.R
+Rscript scripts/02_single_cell.R
+Rscript scripts/03_networks.R
+```
+
+1. **`01_proteomics.R`** — Reads the original secretome Excel, applies completeness filtering and condition-specific mean imputation, calculates exploratory protein-level statistics and multiple-testing corrections, assigns localized/metastatic directions, and performs GO GSEA. It writes outputs to `results/`, including `secretome_gene_directions.csv`.
+2. **`02_single_cell.R`** — Reads the downloaded GSE212966 count matrices, performs QC, integration and SingleR cell annotation, and exports the NK-PDAC/NK-ADJ plasma-membrane gene lists used downstream.
+3. **`03_networks.R`** — Intersects secretome candidates with ExoCarta and plasma-membrane annotations, queries STRING for intergroup associations, exports edge and node tables compatible with Cytoscape, evaluates confidence thresholds, and computes degree-preserving betweenness null models. It uses outputs generated by scripts 01 and 02.
+
+These scripts may require substantial RAM and CPU time. STRING queries and GEO downloads require internet access. The network script's default null-model run includes 1,000 randomizations for each of six networks; a short test run should not be confused with the published analysis.
+
+## Software environment
+
+The actual execution environment is recorded in [`scripts/execution_environment.txt`](scripts/execution_environment.txt). Consult this file for the installed R version, package versions, platform information, and Cytoscape status recorded on the analysis computer. The methods describe R, Seurat/SingleR, Cytoscape/CytoHubba, STRING, igraph and the R packages used for the original analyses.
+
+A `sessionInfo()` record documents the observed environment; it is not an installation lockfile. For environment restoration, a validated `renv.lock` may be added after confirming that the complete pipeline runs with the committed files.
+
+## Reproducibility and limitations
+
+- The six `Network_*.csv` files are retained centrality **results**, not original STRING network edges. Exact reconstruction of the originally published Cytoscape networks requires frozen edge lists and preferably Cytoscape `.cys` sessions. Live STRING API calls may yield differences if database content changes.
+- The original external GSEA gene-set collections beyond GO (e.g. KEGG, Reactome and other tested collections) are not listed in the current directory. To reproduce the full range of enrichment analyses, archive the exact collections and releases used, preferably under `data/references/gsea/`, and verify their use by the script.
+- The supplementary null-model workbook serves as a benchmark for checking the network code; it does not substitute for rerunning the null-model analysis.
+- **End-to-end execution and numerical agreement with the manuscript have not yet been independently verified for this repository layout.** Compare outputs against the final manuscript and supplementary tables before describing the release as fully reproducible.
+
+Recommended verification targets from the manuscript include 2,654 filtered protein accessions, 2,604 mapped proteins/genes, 2,088 NK-PDAC cells, 1,314 NK-ADJ cells, six STRING 0.9 networks, and the reported empirical null-model P values and BH-FDR values.
+
+## Citation
+
+Please cite the associated manuscript and the original GEO and database resources when reusing these materials. Add the final article DOI and the repository release identifier once available.
